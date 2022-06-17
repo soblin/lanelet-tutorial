@@ -50,7 +50,27 @@ void part0Primitives() {
        << (p.attributeOr("velocity", 0_kmh) == 5_kmh) << endl;
 }
 
+void part1Points() {
+  Point3d p3d(utils::getId(), 1, 2, 3);
+
+  {
+    // this is eigen point
+    BasicPoint3d &p3dBasic = p3d.basicPoint();
+    p3dBasic.z() = 4;
+    // convenience: can twice its internal memory through eigen computation
+    BasicPoint3d pTwice = p3dBasic * 2;
+    p3d.basicPoint() = pTwice;
+    cout << "p3d * 2: x = " << p3d.x() << ", y = " << p3d.y()
+         << ", z = " << p3d.z() << endl;
+  }
+  {
+    Point2d p2d = utils::to2D(p3d);
+    cout << "p2d: x = " << p2d.x() << ", y = " << p2d.y() << endl;
+  }
+}
+
 int main() {
   part0Primitives();
+  part1Points();
   return 0;
 }
