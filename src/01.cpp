@@ -9,13 +9,13 @@
 #include <lanelet2_core/utility/Units.h>
 
 #include <iostream>
-#include <thread>
-#include <mutex>
+#include <iomanip>
 
 using namespace lanelet;
+using namespace std;
 
-std::mutex cout_mutex;
 void part0Primitives() {
+  cout << boolalpha;
   Point3d p(utils::getId(), 0, 0, 0);
   // shallow copy; sharing same data
   Point3d pCopy = p;
@@ -27,14 +27,30 @@ void part0Primitives() {
   assert(p.id() == pCopy.id());
   assert(p.z() == pCopy.z());
 
-  std::lock_guard<std::mutex> lg(cout_mutex);
-  std::cout << "id = " << p.id() << ", x = " << p.x() << ", y = " << p.y()
-            << std::endl;
+  cout << "id = " << p.id() << ", x = " << p.x() << ", y = " << p.y() << endl;
+
+  // attributes() is KV store
+  p.attributes()["type"] = "point";
+  p.attributes()["pi"] = 3.14;
+  using namespace lanelet::units::literals;
+  p.attributes()["velocity"] = 5_kmh;
+  assert(p.attributes()["velocity"] == pCopy.attributes()["velocity"]);
+  assert(pCopy.attributes()["type"] == "point");
+
+  // default value if the key does not exist
+  /// this key does not exist
+  cout << "p.attributeOr(\"nonexistent\", -1) = "
+       << p.attributeOr("nonexistent", -1) << endl;
+  // this key cannot be converted to expected type, so fallback
+  cout << "p.attributeOr(\"type\", 0) = " << p.attributeOr("type", 0) << endl;
+  /// 0 and 0_kmh is different type
+  cout << "p.attributeOr(\"velocity\", 0) = "
+       << p.attributeOr("velocity", 0_kmh) << endl;
+  cout << "p.attributeOr(\"velocity\", 0_kmh) == 5_kmh : "
+       << (p.attributeOr("velocity", 0_kmh) == 5_kmh) << endl;
 }
 
 int main() {
-  std::thread t1(part0Primitives), t2(part0Primitives);
-  t1.join();
-  t2.join();
+  part0Primitives();
   return 0;
 }
