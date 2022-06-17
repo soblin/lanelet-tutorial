@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 using namespace lanelet;
 using namespace std;
@@ -117,9 +118,25 @@ void part2LineStrings() {
   }
 }
 
+void part3Polygons() {
+  // the difference between Polygon<N>d and LineString<N>d is that the last and
+  // first point is also connected to close the polygon
+  Point3d p1{utils::getId(), 0, 0, 0};
+  Point3d p2{utils::getId(), 1, 0, 0};
+  Point3d p3{utils::getId(), 2, -1, 0};
+  Polygon3d poly(utils::getId(), {p1, p2, p3});
+
+  // size() is the # of points
+  // numSegment() equals to the # of points
+  assert(poly.size() == 3);
+  assert(poly.numSegments() == 3);
+  assert(poly.segment(2).first == p3 && poly.segment(2).second == p1);
+}
+
 int main() {
   part0Primitives();
   part1Points();
   part2LineStrings();
+  part3Polygons();
   return 0;
 }
