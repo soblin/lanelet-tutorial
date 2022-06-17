@@ -69,8 +69,57 @@ void part1Points() {
   }
 }
 
+void part2LineStrings() {
+  Point3d p1{utils::getId(), 0, 0, 0};
+  Point3d p2{utils::getId(), 1, 0, 0};
+  Point3d p3{utils::getId(), 2, 0, 0};
+  // connect set of points with straight line
+  LineString3d ls(utils::getId(), {p1, p2, p3});
+  for (const auto &p : ls) {
+    assert(p.z() == 0);
+  }
+  // similar to std::vector
+  ls.push_back(Point3d(utils::getId(), 3, 0, 0));
+  assert(ls.size() == 4);
+  ls.pop_back();
+  assert(ls.size() == 3);
+
+  // built-in attributes for LineString
+  ls.attributes()[AttributeName::Type] = AttributeValueString::LineThin;
+  ls.attributes()[AttributeName::Subtype] = AttributeValueString::Dashed;
+
+  // line segment (pair of adjacent points)
+  assert(ls.numSegments() == 2);
+  Segment3d segment = ls.segment(1);
+  cout << "segment.first: x = " << segment.first.x()
+       << ", y = " << segment.first.y() << endl;
+  cout << "segment.second: x = " << segment.second.x()
+       << ", y = " << segment.second.y() << endl;
+
+  // reversed LineString: still the points are shared
+  LineString3d lsInv = ls.invert();
+  segment = lsInv.segment(0);
+  cout << "segment.first: x = " << segment.first.x()
+       << ", y = " << segment.first.y() << endl;
+  cout << "segment.second: x = " << segment.second.x()
+       << ", y = " << segment.second.y() << endl;
+
+  // convert LineString3D to LineString2D
+  LineString2d ls2d = utils::to2D(ls);
+  Point2d front2D = ls2d.front();
+  cout << "front2D: x = " << front2D.x() << ", y = " << front2D.y() << endl;
+
+  // this is a vector of eigen points
+  BasicLineString3d lsBasic = ls.basicLineString();
+  for (int i = 0; i < lsBasic.size(); ++i) {
+    cout << "lsBasic #" << i << ": x = " << lsBasic[i].x()
+         << ", y =  " << lsBasic[i].y() << endl;
+  }
+}
+
 int main() {
   part0Primitives();
   part1Points();
+  part2LineStrings();
   return 0;
 }
