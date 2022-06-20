@@ -236,11 +236,31 @@ void part4Lanelets() {
   cout << endl;
 }
 
+void part5Area() {
+  cout << "part5Area" << endl;
+  LineString3d top = getLineStringY(2);
+  LineString3d right = getLineStringX(2).invert();
+  LineString3d bottom = getLineStringY(0).invert();
+  LineString3d left = getLineStringX(0);
+  Area area(utils::getId(), {top, right, bottom, left});
+
+  LineStrings3d outer = area.outerBound();
+  area.setOuterBound(outer);
+
+  CompoundPolygon3d outerPolygon = area.outerBoundPolygon();
+  cout << "outerPolygon" << endl;
+  for (const auto &p : outerPolygon) {
+    cout << "x = " << p.x() << ", y = " << p.y() << endl;
+  }
+  cout << endl;
+}
+
 int main() {
   part0Primitives();
   part1Points();
   part2LineStrings();
   part3Polygons();
   part4Lanelets();
+  part5Area();
   return 0;
 }
