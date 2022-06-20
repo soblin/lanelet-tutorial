@@ -6,6 +6,7 @@
 #include <lanelet2_core/primitives/LineString.h>
 #include <lanelet2_core/primitives/Point.h>
 #include <lanelet2_core/primitives/Polygon.h>
+#include <lanelet2_core/primitives/BasicRegulatoryElements.h>
 #include <lanelet2_core/utility/Units.h>
 
 #include <iostream>
@@ -16,6 +17,7 @@ using namespace lanelet;
 using namespace std;
 
 void part0Primitives() {
+  cout << "part0Primitives" << endl;
   cout << boolalpha;
   Point3d p(utils::getId(), 0, 0, 0);
   // shallow copy; sharing same data
@@ -49,9 +51,11 @@ void part0Primitives() {
        << p.attributeOr("velocity", 0_kmh) << endl;
   cout << "p.attributeOr(\"velocity\", 0_kmh) == 5_kmh : "
        << (p.attributeOr("velocity", 0_kmh) == 5_kmh) << endl;
+  cout << endl;
 }
 
 void part1Points() {
+  cout << "part1Points" << endl;
   Point3d p3d(utils::getId(), 1, 2, 3);
 
   {
@@ -68,9 +72,11 @@ void part1Points() {
     Point2d p2d = utils::to2D(p3d);
     cout << "p2d: x = " << p2d.x() << ", y = " << p2d.y() << endl;
   }
+  cout << endl;
 }
 
 void part2LineStrings() {
+  cout << "part2LineStrings" << endl;
   Point3d p1{utils::getId(), 0, 0, 0};
   Point3d p2{utils::getId(), 1, 0, 0};
   Point3d p3{utils::getId(), 2, 0, 0};
@@ -116,9 +122,11 @@ void part2LineStrings() {
     cout << "lsBasic #" << i << ": x = " << lsBasic[i].x()
          << ", y =  " << lsBasic[i].y() << endl;
   }
+  cout << endl;
 }
 
 void part3Polygons() {
+  cout << "part3Polygons\n" << endl;
   // the difference between Polygon<N>d and LineString<N>d is that the last and
   // first point is also connected to close the polygon
   Point3d p1{utils::getId(), 0, 0, 0};
@@ -133,10 +141,106 @@ void part3Polygons() {
   assert(poly.segment(2).first == p3 && poly.segment(2).second == p1);
 }
 
+LineString3d getLineStringX(double x) {
+  return LineString3d(utils::getId(), {Point3d(utils::getId(), x, 0, 0),
+                                       Point3d(utils::getId(), x, 1, 0),
+                                       Point3d(utils::getId(), x, 2, 0)});
+}
+
+LineString3d getLineStringY(double y) {
+  return LineString3d(utils::getId(), {Point3d(utils::getId(), 0, y, 0),
+                                       Point3d(utils::getId(), 1, y, 0),
+                                       Point3d(utils::getId(), 2, y, 0)});
+}
+
+Polygon3d getPolygon() {
+  Point3d p1(utils::getId(), 0, 0, 0);
+  Point3d p2(utils::getId(), 2, 0, 0);
+  Point3d p3(utils::getId(), 2, -2, 0);
+  return Polygon3d(utils::getId(), {p1, p2, p3});
+}
+
+Area getArea() {
+  LineString3d top = getLineStringY(2);
+  LineString3d right = getLineStringX(2).invert();
+  LineString3d bottom = getLineStringY(0).invert();
+  LineString3d left = getLineStringY(0);
+  return Area(utils::getId(), {top, right, bottom, left});
+}
+
+Lanelet getLanelet() {
+  LineString3d left = getLineStringY(2);
+  LineString3d right = getLineStringY(0);
+  return Lanelet(utils::getId(), left, right);
+}
+
+RegulatoryElementPtr getRegulatoryElement() {
+  LineString3d trafficLight = getLineStringX(3);
+  return TrafficLight::make(utils::getId(), {}, {trafficLight});
+}
+
+LaneletMap getLaneletMap() {
+  auto area = getArea();
+  auto lanelet = getLanelet();
+  lanelet.addRegulatoryElement(getRegulatoryElement());
+  return std::move(*utils::createMap({lanelet}, {area}));
+}
+
+void part4Lanelets() {
+  cout << "part4Lanelets" << endl;
+  LineString3d left = getLineStringY(1);
+  LineString3d right = getLineStringY(0);
+  Lanelet lanelet(utils::getId(), left, right);
+  assert(lanelet.leftBound() == left);
+  assert(lanelet.rightBound() == right);
+  lanelet.setLeftBound(left); // if need to change this later
+
+  ConstLineString3d centerline =
+      lanelet.centerline(); // automatically computes. this is constant
+
+  // centerline is cached, so cenerline and centerline2 is pointing to same data
+  ConstLineString3d centerline2 = lanelet.centerline();
+  assert(centerline2 == centerline);
+  // re-computes centerline automatically, so centerline changes to another
+  // resource
+  lanelet.setLeftBound(getLineStringY(2));
+  ConstLineString3d centerline3 = lanelet.centerline();
+  assert(centerline3 != centerline);
+
+  // if the bound is directly changed, need to reset() manually
+  right.push_back(Point3d(utils::getId(), 4, 0, 0));
+  assert(centerline3 == lanelet.centerline()); // centerline3 is not updated
+  lanelet.resetCache();
+  assert(centerline3 != lanelet.centerline());
+  right.pop_back();
+  lanelet.resetCache();
+
+  // inverted Lanelet
+  /// Original
+  // A1 -> A2 -> A3
+  // B1 -> B2 -> B3
+  /// Inverted
+  // B3 -> B2 -> B1
+  // A3 -> A2 -> A1
+  Lanelet laneletInv = lanelet.invert();
+  assert(laneletInv.leftBound().front == lanelet.rightBound().back()); // B3
+  assert(laneletInv.rightBound.back() == lanelet.leftBound.front());   // A1
+  assert(laneletInv.constData() == lanelet.constData());
+
+  // CompondLPolygon is the geometic bound (clockwise order)
+  CompoundPolygon3d polygon =
+      lanelet.polygon3d(); // A1 -> A2 -> A3 -> B3 -> B2 -> B1
+  assert(polygon.size == 6);
+  assert(polygon[0] == lanelet.leftBound().front()); // A1
+  assert(polygon.back() == lanelet.rightBound.front());
+  cout << endl;
+}
+
 int main() {
   part0Primitives();
   part1Points();
   part2LineStrings();
   part3Polygons();
+  part4Lanelets();
   return 0;
 }
