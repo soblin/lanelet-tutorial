@@ -164,7 +164,7 @@ Area getArea() {
   LineString3d top = getLineStringY(2);
   LineString3d right = getLineStringX(2).invert();
   LineString3d bottom = getLineStringY(0).invert();
-  LineString3d left = getLineStringY(0);
+  LineString3d left = getLineStringX(0);
   return Area(utils::getId(), {top, right, bottom, left});
 }
 
@@ -255,6 +255,47 @@ void part5Area() {
   cout << endl;
 }
 
+void part6Geometry() {
+  cout << "part6Geometry" << endl;
+  Point3d point(utils::getId(), 1, 4, 1);
+  LineString3d ls = getLineStringY(2); // (0, 2, 0) -> (1, 2, 0) -> (2, 2, 0);
+  Polygon3d poly = getPolygon();       // (0, 0, 0), (2, 0, 0), (2, -2, 0)
+  // (0, 2), (1, 2), (2, 2)
+  // (0, 0), (1, 0), (2, 0)
+  Lanelet lanelet = getLanelet();
+
+  Area area = getArea();
+
+  ConstHybridLineString3d lsHybrid = utils::toHybrid(ls);
+  ConstHybridPolygon3d polyHybrid = utils::toHybrid(poly);
+
+  auto dP2Line3d = geometry::distance(point, lsHybrid);
+  cout << dP2Line3d << endl; // 2.23
+
+  auto dP2Line2d =
+      geometry::distance(utils::to2D(point), utils::to2D(lsHybrid));
+  cout << dP2Line2d << endl; // 2
+
+  auto l3d = geometry::length(lsHybrid); // 2
+  cout << l3d << endl;
+
+  auto ar = geometry::area(utils::to2D(poly));
+  cout << ar << endl; // 2
+
+  BasicPoint3d pProj = geometry::project(ls, point);
+  cout << "pProj: x = " << pProj.x() << ", y = " << pProj.y()
+       << ", z = " << pProj.z() << endl;
+
+  BoundingBox3d pointBox = geometry::boundingBox3d(point);
+  BoundingBox3d lsBox = geometry::boundingBox3d(ls);
+  BoundingBox3d laneletBox = geometry::boundingBox3d(lanelet);
+  BoundingBox2d areaBox = geometry::boundingBox2d(area);
+
+  assert(geometry::intersects(laneletBox, areaBox));
+  assert(!geometry::intersects(lsBox, polyBox));
+  cout << endl;
+}
+
 int main() {
   part0Primitives();
   part1Points();
@@ -262,5 +303,6 @@ int main() {
   part3Polygons();
   part4Lanelets();
   part5Area();
+  part6Geometry();
   return 0;
 }
